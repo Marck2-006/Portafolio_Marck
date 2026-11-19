@@ -32,14 +32,16 @@ export function LanguageProvider({ children }) {
   };
 
   useEffect(() => {
-    document.documentElement.lang = language;
+    if (typeof document !== 'undefined') {
+      document.documentElement.lang = language;
 
-    const meta = portfolioContent[language]?.meta;
-    if (meta) {
-      document.title = meta.title;
-      const metaDesc = document.querySelector('meta[name="description"]');
-      if (metaDesc) {
-        metaDesc.setAttribute('content', meta.description);
+      const meta = portfolioContent[language]?.meta;
+      if (meta) {
+        document.title = meta.title;
+        const metaDesc = document.querySelector('meta[name="description"]');
+        if (metaDesc) {
+          metaDesc.setAttribute('content', meta.description);
+        }
       }
     }
 

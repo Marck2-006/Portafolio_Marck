@@ -1,6 +1,26 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Component, useCallback, useEffect, useRef, useState } from 'react';
 import { Check, MessageSquare } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+
+class IntroErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch() {
+    // Silently disable intro overlay if an unexpected runtime error occurs
+  }
+
+  render() {
+    if (this.state.hasError) return null;
+    return this.props.children;
+  }
+}
 
 const TOTAL_DURATION_MS = 10000;
 const EASE_CSS = 'cubic-bezier(0.22, 1, 0.36, 1)';
@@ -45,35 +65,45 @@ const CURSOR_META = {
 };
 
 function getFinalViewportRect(element) {
-  const rect = element.getBoundingClientRect();
-  let offsetX = 0;
-  let offsetY = 0;
-
-  let current = element;
-  while (
-    current &&
-    current !== document.body &&
-    current !== document.documentElement
-  ) {
-    const transform = window.getComputedStyle(current).transform;
-    if (transform && transform !== 'none') {
-      try {
-        const matrix = new DOMMatrixReadOnly(transform);
-        offsetX += matrix.m41;
-        offsetY += matrix.m42;
-      } catch {
-        // Ignore non-standard transform values
-      }
-    }
-    current = current.parentElement;
+  if (!element || typeof element.getBoundingClientRect !== 'function') {
+    return null;
   }
 
-  return {
-    left: rect.left - offsetX,
-    top: rect.top - offsetY,
-    width: rect.width,
-    height: rect.height,
-  };
+  try {
+    const rect = element.getBoundingClientRect();
+    let offsetX = 0;
+    let offsetY = 0;
+
+    if (typeof window.DOMMatrixReadOnly === 'function') {
+      let current = element;
+      while (
+        current &&
+        current !== document.body &&
+        current !== document.documentElement
+      ) {
+        const transform = window.getComputedStyle(current).transform;
+        if (transform && transform !== 'none') {
+          try {
+            const matrix = new window.DOMMatrixReadOnly(transform);
+            offsetX += matrix.m41;
+            offsetY += matrix.m42;
+          } catch {
+            // Ignore non-standard transform values
+          }
+        }
+        current = current.parentElement;
+      }
+    }
+
+    return {
+      left: rect.left - offsetX,
+      top: rect.top - offsetY,
+      width: rect.width,
+      height: rect.height,
+    };
+  } catch {
+    return null;
+  }
 }
 
 function CursorArrowSvg({ color }) {
@@ -184,7 +214,7 @@ function FigmaBox({
   );
 }
 
-export default function CollabIntroOverlay() {
+function CollabIntroOverlayInner() {
   const { language } = useLanguage();
   const [active, setActive] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -292,18 +322,31 @@ export default function CollabIntroOverlay() {
 
   // Main 10-second 4-phase choreography
   useEffect(() => {
-    if (typeof window === 'undefined') return undefined;
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return undefined;
+    }
 
-    const reducedMotion = window.matchMedia(
-      '(prefers-reduced-motion: reduce)'
-    ).matches;
-    if (reducedMotion) return undefined;
+    try {
+      if (
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      ) {
+        return undefined;
+      }
+    } catch {
+      // Continue safely if matchMedia is unavailable
+    }
 
     cleanedUpRef.current = false;
 
     const schedule = (ms, fn) => {
       const id = window.setTimeout(() => {
-        if (!cleanedUpRef.current) fn();
+        if (cleanedUpRef.current) return;
+        try {
+          fn();
+        } catch {
+          finishAndCleanup();
+        }
       }, ms);
       timersRef.current.push(id);
       return id;
@@ -332,41 +375,53 @@ export default function CollabIntroOverlay() {
     const startRaf = window.requestAnimationFrame(() => {
       if (cleanedUpRef.current) return;
 
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-      const mobile = vw < 768;
-      setIsMobile(mobile);
+      try {
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const mobile = vw < 768;
+        setIsMobile(mobile);
 
-      const getEl = (name) =>
-        document.querySelector(`[data-collab-target="${name}"]`);
+        const getEl = (name) =>
+          document.querySelector(`[data-collab-target="${name}"]`);
 
-      const titleEl = touchEl(getEl('title'));
-      const subtitleEl = touchEl(getEl('subtitle-block'));
-      const badgeEl = touchEl(getEl('badge'));
-      const badgeTextEl = getEl('badge-text');
-      const quoteEl = getEl('quote');
-      const ctaEl = getEl('cta');
-      const ctaPrimaryEl = touchEl(getEl('cta-primary'));
-      const ctaSecondaryEl = touchEl(getEl('cta-secondary'));
-      const navbarEl = touchEl(getEl('navbar'));
-      const langEl = touchEl(getEl('lang-switcher'));
+        const titleEl = touchEl(getEl('title'));
+        const subtitleEl = touchEl(getEl('subtitle-block'));
+        const badgeEl = touchEl(getEl('badge'));
+        const badgeTextEl = getEl('badge-text');
+        const quoteEl = getEl('quote');
+        const ctaEl = getEl('cta');
+        const ctaPrimaryEl = touchEl(getEl('cta-primary'));
+        const ctaSecondaryEl = touchEl(getEl('cta-secondary'));
+        const navbarEl = touchEl(getEl('navbar'));
+        const langEl = touchEl(getEl('lang-switcher'));
 
-      if (!titleEl || !ctaEl) return;
+        if (!titleEl || !ctaEl) return;
 
-      const measured = {
-        title: getFinalViewportRect(titleEl),
-        subtitle: subtitleEl ? getFinalViewportRect(subtitleEl) : null,
-        badge: badgeEl ? getFinalViewportRect(badgeEl) : null,
-        badgeText: badgeTextEl ? getFinalViewportRect(badgeTextEl) : null,
-        quote: quoteEl ? getFinalViewportRect(quoteEl) : null,
-        cta: getFinalViewportRect(ctaEl),
-        ctaPrimary: ctaPrimaryEl ? getFinalViewportRect(ctaPrimaryEl) : null,
-        ctaSecondary: ctaSecondaryEl
-          ? getFinalViewportRect(ctaSecondaryEl)
-          : null,
-        navbar: navbarEl ? getFinalViewportRect(navbarEl) : null,
-        lang: langEl ? getFinalViewportRect(langEl) : null,
-      };
+        const titleRect = getFinalViewportRect(titleEl);
+        const ctaRect = getFinalViewportRect(ctaEl);
+        if (
+          !titleRect ||
+          !ctaRect ||
+          titleRect.width <= 0 ||
+          ctaRect.width <= 0
+        ) {
+          return;
+        }
+
+        const measured = {
+          title: titleRect,
+          subtitle: subtitleEl ? getFinalViewportRect(subtitleEl) : null,
+          badge: badgeEl ? getFinalViewportRect(badgeEl) : null,
+          badgeText: badgeTextEl ? getFinalViewportRect(badgeTextEl) : null,
+          quote: quoteEl ? getFinalViewportRect(quoteEl) : null,
+          cta: ctaRect,
+          ctaPrimary: ctaPrimaryEl ? getFinalViewportRect(ctaPrimaryEl) : null,
+          ctaSecondary: ctaSecondaryEl
+            ? getFinalViewportRect(ctaSecondaryEl)
+            : null,
+          navbar: navbarEl ? getFinalViewportRect(navbarEl) : null,
+          lang: langEl ? getFinalViewportRect(langEl) : null,
+        };
 
       setRects(measured);
       setActive(true);
@@ -917,6 +972,9 @@ export default function CollabIntroOverlay() {
       schedule(TOTAL_DURATION_MS, () => {
         finishAndCleanup();
       });
+      } catch {
+        finishAndCleanup();
+      }
     });
 
     rafsRef.current.push(startRaf);
@@ -1252,5 +1310,13 @@ export default function CollabIntroOverlay() {
         </kbd>
       </button>
     </>
+  );
+}
+
+export default function CollabIntroOverlay() {
+  return (
+    <IntroErrorBoundary>
+      <CollabIntroOverlayInner />
+    </IntroErrorBoundary>
   );
 }
