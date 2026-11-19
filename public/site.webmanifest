@@ -1,0 +1,21 @@
+{
+  "name": "Bismarck Hernández Castellón (@Marck)",
+  "short_name": "Marck",
+  "description": "Portafolio profesional de Bismarck Hernández Castellón (Marck) — Full-Stack Developer.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050508",
+  "theme_color": "#050508",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

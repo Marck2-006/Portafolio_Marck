@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0E0E18" />
+      <stop offset="100%" stop-color="#050508" />
+    </linearGradient>
+    <linearGradient id="borderGrad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3B82F6" stop-opacity="0.7" />
+      <stop offset="55%" stop-color="#8B5CF6" stop-opacity="0.55" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.18" />
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="16" y1="15" x2="48" y2="49" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3B82F6" />
+      <stop offset="100%" stop-color="#8B5CF6" />
+    </linearGradient>
+  </defs>
+
+  <!-- Obsidian squircle backdrop -->
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="url(#bgGrad)" stroke="url(#borderGrad)" stroke-width="2" />
+
+  <!-- Geometric M: vertical structural pillars (pure white for max 16px sharpness) -->
+  <path d="M14 49V15H22.5V49H14Z" fill="#FFFFFF" />
+  <path d="M41.5 49V15H50V49H41.5Z" fill="#FFFFFF" />
+
+  <!-- Geometric M: central V bridge (electric blue -> violet accent) -->
+  <path d="M22.5 15L32 30.5L41.5 15H50L34.4 39.2C33.3 40.9 30.7 40.9 29.6 39.2L14 15H22.5Z" fill="url(#accentGrad)" />
+</svg>
