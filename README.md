@@ -110,3 +110,5 @@ npm run lint
 - **Correo:** [bjesushc2006@gmail.com](mailto:bjesushc2006@gmail.com)
 - **GitHub:** [github.com/Marck2-006](https://github.com/Marck2-006)
 - **Instagram:** [@marck__2](https://www.instagram.com/marck__2?fqnt=dGZrbmVmYXN6aWpl)
+
+Sigueme :p
